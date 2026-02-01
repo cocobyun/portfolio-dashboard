@@ -1,0 +1,27 @@
+# API 키 보안 (절대 공유하지 마세요!)
+config.py
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Streamlit
+.streamlit/
+
+# OS
+.DS_Store
+Thumbs.db
