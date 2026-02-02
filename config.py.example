@@ -1,6 +1,0 @@
-# 키움증권 API 설정
-# 이 파일을 config.py로 복사하고 본인의 API 정보를 입력하세요
-
-api_key = "여기에_본인의_API_KEY를_입력하세요"
-api_secret_key = "여기에_본인의_SECRET_KEY를_입력하세요"
-host = "https://mockapi.kiwoom.com"  # 모의투자: https://mockapi.kiwoom.com, 실전투자: https://api.kiwoom.com

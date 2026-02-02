@@ -8,7 +8,7 @@ import websocket
 import json
 import threading
 import queue
-from kiwoom_prettycoco1 import KiwoomTR
+import requests
 import time
 
 # 페이지 설정
@@ -16,8 +16,102 @@ st.set_page_config(
     page_title="포트폴리오 실시간 비중",
     page_icon="💰",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
+
+# ==================== API 키 입력 (사이드바) ====================
+
+st.sidebar.header("🔑 키움증권 API 설정")
+st.sidebar.caption("키움증권 OpenAPI에서 발급받은 키를 입력하세요")
+
+api_key = st.sidebar.text_input("API Key", type="password", placeholder="API Key를 입력하세요")
+api_secret_key = st.sidebar.text_input("Secret Key", type="password", placeholder="Secret Key를 입력하세요")
+host = st.sidebar.selectbox("서버 선택", ["https://api.kiwoom.com", "https://mockapi.kiwoom.com"], index=0)
+
+if not api_key or not api_secret_key:
+    st.warning("⬅️ 왼쪽 사이드바에서 API Key와 Secret Key를 입력해주세요")
+    st.stop()
+
+# ==================== 키움증권 API 클래스 ====================
+
+class KiwoomTR:
+    def __init__(self):
+        self.token = self.login()
+
+    @staticmethod
+    def login():
+        params = {
+            'grant_type': 'client_credentials',
+            'appkey': api_key,
+            'secretkey': api_secret_key,
+        }
+        url = host + '/oauth2/token'
+        headers = {'Content-Type': 'application/json;charset=UTF-8'}
+        response = requests.post(url, headers=headers, json=params)
+        response.raise_for_status()
+        token = response.json()['token']
+        return token
+
+    def fn_kt00018(self, data, cont_yn='N', next_key=''):
+        endpoint = '/api/dostk/acnt'
+        url = host + endpoint
+
+        headers = {
+            'Content-Type': 'application/json;charset=UTF-8',
+            'authorization': f'Bearer {self.token}',
+            'cont-yn': cont_yn,
+            'next-key': next_key,
+            'api-id': 'kt00018',
+        }
+
+        response = requests.post(url, headers=headers, json=data)
+        response.raise_for_status()
+        res = response.json()
+
+        def get_account_summary(res):
+            account_summary = {
+                "총매입금액": res['tot_pur_amt'],
+                "총평가금액": res['tot_evlt_amt'],
+                "총평가손익금액": res['tot_evlt_pl'],
+                "총수익률(%)": res['tot_prft_rt'],
+                "추정예탁자산": res['prsm_dpst_aset_amt'],
+                "총대출금": res['tot_loan_amt'],
+                "총융자금액": res['tot_crd_loan_amt'],
+                "총대주금액": res['tot_crd_ls_amt'],
+                "계좌평가잔고개별합산": []
+            }
+
+            for 종목 in res['acnt_evlt_remn_indv_tot']:
+                종목정보 = {
+                    "종목번호": 종목['stk_cd'],
+                    "종목명": 종목['stk_nm'],
+                    "평가손익": 종목['evltv_prft'],
+                    "수익률(%)": 종목['prft_rt'],
+                    "매입가": 종목['pur_pric'],
+                    "전일종가": 종목['pred_close_pric'],
+                    "보유수량": 종목['rmnd_qty'],
+                    "매매가능수량": 종목['trde_able_qty'],
+                    "현재가": 종목['cur_prc'],
+                    "전일매수수량": 종목['pred_buyq'],
+                    "전일매도수량": 종목['pred_sellq'],
+                    "금일매수수량": 종목['tdy_buyq'],
+                    "금일매도수량": 종목['tdy_sellq'],
+                    "매입금액": 종목['pur_amt'],
+                    "매입수수료": 종목['pur_cmsn'],
+                    "평가금액": 종목['evlt_amt'],
+                    "평가수수료": 종목['sell_cmsn'],
+                    "세금": 종목['tax'],
+                    "수수료합": 종목['sum_cmsn'],
+                    "보유비중(%)": 종목['poss_rt'],
+                    "신용구분": 종목['crd_tp'],
+                    "신용구분명": 종목['crd_tp_nm'],
+                    "대출일": 종목['crd_loan_dt'],
+                }
+                account_summary["계좌평가잔고개별합산"].append(종목정보)
+
+            return account_summary
+
+        return get_account_summary(res)
 
 # 커스텀 CSS
 st.markdown("""
@@ -51,24 +145,24 @@ st.markdown("""
 
 class RealtimePriceWebSocket:
     """키움증권 WebSocket을 통한 실시간 주가 수신"""
-    
+
     def __init__(self):
         self.ws = None
         self.prices = {}  # {종목코드: 현재가}
         self.price_queue = queue.Queue()
         self.running = False
         self.last_update_time = {}
-        
+
     def on_message(self, ws, message):
         """WebSocket 메시지 수신"""
         try:
             data = json.loads(message)
-            
+
             # 실시간 체결 데이터 처리
             if data.get('msg_cd') == '0':  # 정상 수신
                 ticker = data.get('stck_cano')  # 종목코드
                 price = int(data.get('stck_prpr', 0))  # 현재가
-                
+
                 if ticker and price > 0:
                     self.prices[ticker] = price
                     self.price_queue.put({
@@ -77,28 +171,28 @@ class RealtimePriceWebSocket:
                         'time': datetime.now()
                     })
                     self.last_update_time[ticker] = datetime.now()
-                    
+
         except Exception as e:
             pass  # 실패해도 계속 진행
-    
+
     def on_error(self, ws, error):
         """WebSocket 에러 처리"""
         pass
-    
+
     def on_close(self, ws, close_status_code, close_msg):
         """WebSocket 연결 종료"""
         self.running = False
-    
+
     def on_open(self, ws):
         """WebSocket 연결 시작"""
         self.running = True
-    
+
     def connect(self, tickers):
         """WebSocket 연결 및 구독"""
         try:
             # 키움증권 실시간 WebSocket URL
             ws_url = "wss://openapi.kiwoom.com/websocket"
-            
+
             self.ws = websocket.WebSocketApp(
                 ws_url,
                 on_message=self.on_message,
@@ -106,12 +200,12 @@ class RealtimePriceWebSocket:
                 on_close=self.on_close,
                 on_open=self.on_open
             )
-            
+
             # 백그라운드에서 실행
             wst = threading.Thread(target=self.ws.run_forever)
             wst.daemon = True
             wst.start()
-            
+
             # 종목 구독 요청
             for ticker in tickers:
                 subscribe_msg = {
@@ -119,10 +213,10 @@ class RealtimePriceWebSocket:
                     'tr_key': ticker
                 }
                 time.sleep(0.05)  # API 레이트 리미트
-                
+
                 if self.ws:
                     self.ws.send(json.dumps(subscribe_msg))
-                    
+
         except Exception as e:
             pass  # WebSocket 연결 실패해도 REST API로 폴백
 
@@ -150,7 +244,7 @@ def get_account_data():
 def get_realtime_prices(websocket_manager, tickers):
     """WebSocket에서 실시간 가격 가져오기 (없으면 REST API 사용)"""
     prices = {}
-    
+
     for ticker in tickers:
         # WebSocket에서 가격 확인
         if ticker in websocket_manager.prices:
@@ -164,7 +258,7 @@ def get_realtime_prices(websocket_manager, tickers):
                 prices[ticker] = float(result.get('현재가', 0))
             except:
                 prices[ticker] = 0
-    
+
     return prices
 
 # ==================== 메인 화면 ====================
@@ -219,15 +313,15 @@ for stock in stocks:
     name = stock.get('종목명', '')
     quantity = int(stock.get('보유수량', 0))
     purchase_price = float(stock.get('매입가', 0))
-    
+
     # 실시간 가격 사용 (WebSocket 또는 REST API)
     current_price = realtime_prices.get(ticker, float(stock.get('현재가', 0)))
-    
+
     if quantity > 0:
         evaluation_amount = current_price * quantity
         profit_loss = int((current_price - purchase_price) * quantity)
         profit_rate = ((current_price - purchase_price) / purchase_price * 100) if purchase_price > 0 else 0
-        
+
         df_data.append({
             '종목명': name,
             '종목코드': ticker,
@@ -337,9 +431,9 @@ chart_col1, chart_col2 = st.columns(2)
 # 비중 파이 차트
 with chart_col1:
     st.markdown("**자산 구성 비중 (실시간)**")
-    
+
     chart_data = df[['종목명', '평가금액', '비중(%)']].copy()
-    
+
     # 현금 추가
     cash_ratio = (api_cash / total_assets * 100) if total_assets > 0 else 0
     cash_row = pd.DataFrame({
@@ -348,7 +442,7 @@ with chart_col1:
         '비중(%)': [cash_ratio]
     })
     chart_data = pd.concat([chart_data, cash_row], ignore_index=True)
-    
+
     fig_pie = px.pie(
         chart_data,
         values='평가금액',
@@ -365,7 +459,7 @@ with chart_col1:
 # 수익률 막대 차트
 with chart_col2:
     st.markdown("**종목별 수익률**")
-    
+
     fig_bar = px.bar(
         df,
         x='종목명',
