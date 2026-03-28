@@ -1,0 +1,156 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --bg-primary: #0f1117;
+  --bg-secondary: #1a1d27;
+  --bg-card: #1e2130;
+  --bg-hover: #252840;
+  --bg-border: #2d3148;
+  --text-primary: #e2e4ed;
+  --text-secondary: #9098b1;
+  --text-muted: #5c6480;
+  --accent-blue: #4a7cf7;
+  --accent-green: #2ecc88;
+  --accent-red: #e05252;
+  --accent-yellow: #f5a623;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Pretendard', 'Apple SD Gothic Neo', -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 스크롤바 */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--bg-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* 테이블 공통 스타일 */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.data-table th {
+  background-color: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-weight: 500;
+  padding: 6px 10px;
+  text-align: right;
+  border-bottom: 1px solid var(--bg-border);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.data-table th:first-child,
+.data-table th:nth-child(2) {
+  text-align: left;
+}
+
+.data-table td {
+  padding: 5px 10px;
+  text-align: right;
+  border-bottom: 1px solid rgba(45, 49, 72, 0.4);
+  white-space: nowrap;
+  color: var(--text-primary);
+}
+
+.data-table td:first-child,
+.data-table td:nth-child(2) {
+  text-align: left;
+}
+
+.data-table tbody tr:hover {
+  background-color: var(--bg-hover);
+}
+
+/* 숫자 포맷 */
+.num { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; }
+.pos { color: var(--accent-red); }    /* 한국식: 상승=빨강 */
+.neg { color: var(--accent-blue); }   /* 하락=파랑 */
+.warn { color: var(--accent-yellow); }
+.viol { color: var(--accent-red); }
+
+/* 카드 공통 */
+.card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--bg-border);
+  border-radius: 6px;
+  padding: 14px 16px;
+}
+
+/* 섹션 타이틀 */
+.section-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--bg-border);
+}
+
+/* 상태 뱃지 */
+.badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.badge-normal { background: rgba(46, 204, 136, 0.15); color: #2ecc88; }
+.badge-warning { background: rgba(245, 166, 35, 0.15); color: #f5a623; }
+.badge-violation { background: rgba(224, 82, 82, 0.15); color: #e05252; }
+.badge-monitoring { background: rgba(144, 152, 177, 0.12); color: #9098b1; }
+
+/* 입력 공통 */
+input[type="text"], input[type="number"], select {
+  background: var(--bg-secondary);
+  border: 1px solid var(--bg-border);
+  color: var(--text-primary);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  outline: none;
+}
+
+input:focus, select:focus {
+  border-color: var(--accent-blue);
+}
+
+/* 버튼 */
+.btn {
+  padding: 5px 14px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s;
+}
+
+.btn:hover { opacity: 0.85; }
+.btn-primary { background: var(--accent-blue); color: white; }
+.btn-secondary { background: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--bg-border); }
+.btn-danger { background: var(--accent-red); color: white; }
+.btn-disabled { background: var(--bg-secondary); color: var(--text-muted); cursor: not-allowed; }

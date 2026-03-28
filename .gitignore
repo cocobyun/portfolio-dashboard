@@ -1,4 +1,7 @@
-# API 키 보안 (절대 공유하지 마세요!)
+# 민감정보 (절대 커밋 금지)
+.env
+.env.local
+.env.production
 config.py
 
 # Python
@@ -12,6 +15,13 @@ __pycache__/
 venv/
 env/
 ENV/
+.venv/
+
+# Node.js
+node_modules/
+.next/
+out/
+.vercel/
 
 # IDE
 .vscode/
@@ -19,9 +29,13 @@ ENV/
 *.swp
 *.swo
 
-# Streamlit
+# Streamlit (레거시)
 .streamlit/
 
 # OS
 .DS_Store
 Thumbs.db
+
+# 로그
+*.log
+logs/
