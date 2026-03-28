@@ -49,7 +49,10 @@ class KiwoomTR:
         headers = {'Content-Type': 'application/json;charset=UTF-8'}
         response = requests.post(url, headers=headers, json=params)
         response.raise_for_status()
-        token = response.json()['token']
+        res = response.json()
+        token = res.get('token') or res.get('access_token')
+        if not token:
+            raise Exception(f"토큰 발급 실패 - API 응답: {res}")
         return token
 
     def fn_kt00018(self, data, cont_yn='N', next_key=''):
